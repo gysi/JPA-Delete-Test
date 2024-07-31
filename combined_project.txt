@@ -1,0 +1,548 @@
+Start of File: .mvn/wrapper/maven-wrapper.properties
+```
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+wrapperVersion=3.3.2
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.7/apache-maven-3.9.7-bin.zip
+```
+End of File: .mvn/wrapper/maven-wrapper.properties
+
+Start of File: pom.xml
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.3.2</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>de.gregord</groupId>
+	<artifactId>jpa-delete-test</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>jpa-delete-test</name>
+	<description>Test Jpa Project</description>
+	<url/>
+	<licenses>
+		<license/>
+	</licenses>
+	<developers>
+		<developer/>
+	</developers>
+	<scm>
+		<connection/>
+		<developerConnection/>
+		<tag/>
+		<url/>
+	</scm>
+	<properties>
+		<java.version>21</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-mysql</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>mysql</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+```
+End of File: pom.xml
+
+Start of File: combined_project.txt
+```
+```
+End of File: combined_project.txt
+
+Start of File: src/test/resources/db/migration/V1__createInitialStructure.sql
+```
+-- Create the Parent table
+CREATE TABLE parent
+(
+    id   INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+-- Create the Child table
+CREATE TABLE child
+(
+    id   INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+-- Create the junction table to establish a many-to-many relationship
+CREATE TABLE parent_child
+(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_id INT,
+    child_id  INT,
+    attribute varchar(255) NOT NULL,
+    FOREIGN KEY (parent_id) REFERENCES parent (id) ON DELETE CASCADE,
+    FOREIGN KEY (child_id) REFERENCES child (id) ON DELETE CASCADE
+);
+```
+End of File: src/test/resources/db/migration/V1__createInitialStructure.sql
+
+Start of File: src/test/resources/application-test.yaml
+```
+spring:
+  datasource:
+    url: jdbc:tc:mysql:latest:///test
+    username: test
+    password: test
+```
+End of File: src/test/resources/application-test.yaml
+
+Start of File: src/test/java/de/gregord/jpa_delete_test/TestcontainersConfiguration.java
+```
+package de.gregord.jpa_delete_test;
+
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
+
+@TestConfiguration(proxyBeanMethods = false)
+class TestcontainersConfiguration {
+
+	@Bean
+	@ServiceConnection
+	MySQLContainer<?> mysqlContainer() {
+		return new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
+	}
+
+}
+```
+End of File: src/test/java/de/gregord/jpa_delete_test/TestcontainersConfiguration.java
+
+Start of File: src/test/java/de/gregord/jpa_delete_test/MyTestIT.java
+```
+package de.gregord.jpa_delete_test;
+
+import de.gregord.jpa_delete_test.entities.Child;
+import de.gregord.jpa_delete_test.entities.Parent;
+import de.gregord.jpa_delete_test.entities.ParentChild;
+import de.gregord.jpa_delete_test.services.ChildService;
+import de.gregord.jpa_delete_test.services.ParentService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+@ActiveProfiles("test")
+public class MyTestIT {
+
+    @Autowired
+    private ParentService parentService;
+    @Autowired
+    private ChildService childService;
+
+    @Test
+    public void contextLoads() {
+    }
+
+    @Test
+    void testSaveAndFindParent() {
+        Child child1 = new Child();
+        child1.setName("child1");
+        Child child2 = new Child();
+        child2.setName("child2");
+
+        Child savedChild1 = childService.save(child1);
+        Child savedChild2 = childService.save(child2);
+
+        Parent parent = new Parent();
+        parent.setName("Test Parent");
+
+        Parent savedParent = parentService.save(parent);
+        Optional<Parent> foundParent = parentService.findById(savedParent.getId());
+
+        assertThat(foundParent.isPresent()).isTrue();
+
+        Set<ParentChild> parentChilds = new HashSet<>();
+
+        ParentChild parentChild1 = new ParentChild();
+        parentChild1.setParent(foundParent.get());
+        parentChild1.setChild(savedChild1);
+        parentChild1.setAttribute("parentChild1");
+        parentChilds.add(parentChild1);
+
+        ParentChild parentChild2 = new ParentChild();
+        parentChild2.setParent(foundParent.get());
+        parentChild2.setChild(savedChild2);
+        parentChild2.setAttribute("parentChild2");
+        parentChilds.add(parentChild2);
+
+        foundParent.get().setParentChild(parentChilds);
+        savedParent = parentService.save(foundParent.get());
+        foundParent = parentService.findById(savedParent.getId());
+
+        assertThat(foundParent).isPresent();
+        assertThat(foundParent.get().getName()).isEqualTo("Test Parent");
+        assertThat(foundParent.get().getParentChild().size()).isEqualTo(2);
+
+        foundParent.get().getParentChild().clear();
+        savedParent = parentService.save(foundParent.get());
+
+        foundParent = parentService.findById(savedParent.getId());
+        assertThat(foundParent).isPresent();
+        assertThat(foundParent.get().getName()).isEqualTo("Test Parent");
+        assertThat(foundParent.get().getParentChild().size()).isEqualTo(0);
+    }
+}
+```
+End of File: src/test/java/de/gregord/jpa_delete_test/MyTestIT.java
+
+Start of File: src/test/java/de/gregord/jpa_delete_test/TestJPADeleteTestApplication.java
+```
+package de.gregord.jpa_delete_test;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.core.env.AbstractEnvironment;
+
+public class TestJPADeleteTestApplication {
+
+	public static void main(String[] args) {
+		System.setProperty(AbstractEnvironment.ACTIVE_PROFILES_PROPERTY_NAME, "test");
+		SpringApplication.from(JPADeleteTestApplication::main).with(TestcontainersConfiguration.class).run(args);
+	}
+
+}
+```
+End of File: src/test/java/de/gregord/jpa_delete_test/TestJPADeleteTestApplication.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/JPADeleteTestApplication.java
+```
+package de.gregord.jpa_delete_test;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class JPADeleteTestApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(JPADeleteTestApplication.class, args);
+	}
+
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/JPADeleteTestApplication.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/repositories/ParentRepository.java
+```
+package de.gregord.jpa_delete_test.repositories;
+
+import de.gregord.jpa_delete_test.entities.Parent;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ParentRepository extends JpaRepository<Parent, Long> {
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/repositories/ParentRepository.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/repositories/ParentChildRepository.java
+```
+package de.gregord.jpa_delete_test.repositories;
+
+import de.gregord.jpa_delete_test.entities.ParentChild;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ParentChildRepository extends JpaRepository<ParentChild, Long> {
+
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/repositories/ParentChildRepository.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/repositories/ChildRepository.java
+```
+package de.gregord.jpa_delete_test.repositories;
+
+import de.gregord.jpa_delete_test.entities.Child;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ChildRepository extends JpaRepository<Child, Long> {
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/repositories/ChildRepository.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/services/ParentService.java
+```
+package de.gregord.jpa_delete_test.services;
+
+import de.gregord.jpa_delete_test.entities.Parent;
+import de.gregord.jpa_delete_test.repositories.ParentRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class ParentService {
+
+    ParentRepository parentRepository;
+
+    public ParentService(ParentRepository parentRepository) {
+        this.parentRepository = parentRepository;
+    }
+
+    public Parent save(Parent parent) {
+        return parentRepository.save(parent);
+    }
+
+    public Optional<Parent> findById(Long id) {
+        return parentRepository.findById(id);
+    }
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/services/ParentService.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/services/ChildService.java
+```
+package de.gregord.jpa_delete_test.services;
+
+import de.gregord.jpa_delete_test.entities.Child;
+import de.gregord.jpa_delete_test.repositories.ChildRepository;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ChildService {
+
+    ChildRepository childRepository;
+
+    public ChildService(ChildRepository childRepository) {
+        this.childRepository = childRepository;
+    }
+
+    public Child save(Child child) {
+        return childRepository.save(child);
+    }
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/services/ChildService.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/entities/ParentChild.java
+```
+package de.gregord.jpa_delete_test.entities;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.proxy.HibernateProxy;
+
+import java.util.Objects;
+
+@Table(name = "parent_child")
+@Entity
+@Getter
+@Setter
+public class ParentChild {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private Parent parent;
+
+    @ManyToOne
+    @JoinColumn(name = "child_id")
+    private Child child;
+
+    private String attribute;
+
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        ParentChild that = (ParentChild) o;
+        return getParent() != null && Objects.equals(getParent(), that.getParent())
+                && getChild() != null && Objects.equals(getChild(), that.getChild());
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(parent, child);
+    }
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/entities/ParentChild.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/entities/Parent.java
+```
+package de.gregord.jpa_delete_test.entities;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.proxy.HibernateProxy;
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+@Table(name = "parent")
+@Entity
+@Getter
+@Setter
+public class Parent {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(mappedBy = "parent", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ParentChild> parentChild = new HashSet<>();
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        Parent parent = (Parent) o;
+        return getId() != null && Objects.equals(getId(), parent.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/entities/Parent.java
+
+Start of File: src/main/java/de/gregord/jpa_delete_test/entities/Child.java
+```
+package de.gregord.jpa_delete_test.entities;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.proxy.HibernateProxy;
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+@Table(name = "child")
+@Entity
+@Getter
+@Setter
+public class Child {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(mappedBy = "child")
+    private Set<ParentChild> parentChild = new HashSet<>();
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        Child child = (Child) o;
+        return getId() != null && Objects.equals(getId(), child.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+}
+```
+End of File: src/main/java/de/gregord/jpa_delete_test/entities/Child.java
+
